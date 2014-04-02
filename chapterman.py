@@ -11,32 +11,32 @@ class Interface(wx.Frame):
 		self.icon = wx.Icon("icon.png")
 		self.SetIcon(self.icon)
 		
-		self.statusBar = wx.StatusBar(self)
-		self.SetStatusBar(self.statusBar)
+		self.status_bar = wx.StatusBar(self)
+		self.SetStatusBar(self.status_bar)
 
-		self.fileMenu = wx.Menu()
-		self.fileNew = self.fileMenu.Append(wx.ID_NEW, "&New", "Start a file")
-		self.fileOpen = self.fileMenu.Append(wx.ID_OPEN, "&Open", "Open a file")
-		self.fileRevert = self.fileMenu.Append(wx.ID_REVERT_TO_SAVED, "Revert to Saved", "Destroy changes since the previous save")
-		self.fileSave = self.fileMenu.Append(wx.ID_SAVE, "&Save", "Save this file")
-		self.fileSaveAs = self.fileMenu.Append(wx.ID_SAVEAS, "Save &As...", "Save this file with a new name")
-		self.fileExit = self.fileMenu.Append(wx.ID_EXIT, "&Exit", "Terminate the program")
-		self.Bind(wx.EVT_MENU, self.onFileNew, self.fileNew)
-		self.Bind(wx.EVT_MENU, self.onFileOpen, self.fileOpen)
-		self.Bind(wx.EVT_MENU, self.onFileRevert, self.fileRevert)
-		self.Bind(wx.EVT_MENU, self.onFileSave, self.fileSave)
-		self.Bind(wx.EVT_MENU, self.onFileSaveAs, self.fileSaveAs)
-		self.Bind(wx.EVT_MENU, self.onExit, self.fileExit)
+		self.file_menu = wx.Menu()
+		self.file_new = self.fileMenu.Append(wx.ID_NEW, "&New", "Start a file")
+		self.file_open = self.fileMenu.Append(wx.ID_OPEN, "&Open", "Open a file")
+		self.file_revert = self.fileMenu.Append(wx.ID_REVERT_TO_SAVED, "Revert to Saved", "Destroy changes since the previous save")
+		self.file_save = self.fileMenu.Append(wx.ID_SAVE, "&Save", "Save this file")
+		self.file_saveas = self.fileMenu.Append(wx.ID_SAVEAS, "Save &As...", "Save this file with a new name")
+		self.file_exit = self.fileMenu.Append(wx.ID_EXIT, "&Exit", "Terminate the program")
+		self.Bind(wx.EVT_MENU, self.on_file_new, self.file_new)
+		self.Bind(wx.EVT_MENU, self.on_file_open, self.file_open)
+		self.Bind(wx.EVT_MENU, self.on_file_revert, self.file_revert)
+		self.Bind(wx.EVT_MENU, self.onFileSave, self.file_save)
+		self.Bind(wx.EVT_MENU, self.onFileSaveAs, self.file_saveas)
+		self.Bind(wx.EVT_MENU, self.onExit, self.file_exit)
 
-		self.menuBar = wx.MenuBar()
-		self.menuBar.Append(self.fileMenu, "&File")
-		self.SetMenuBar(self.menuBar)
+		self.menu_bar = wx.MenuBar()
+		self.menu_bar.Append(self.fileMenu, "&File")
+		self.SetMenuBar(self.menu_bar)
 
-		self.toolBar = self.CreateToolBar()
-		self.toolView = self.toolBar.AddLabelTool(-1, "View", wx.Bitmap("view.png"))
+		self.tool_bar = self.CreateToolBar()
+		self.tool_view = self.tool_bar.AddLabelTool(-1, "View", wx.Bitmap("view.png"))
 		self.Bind(wx.EVT_TOOL, self.onToolView)
-		self.toolBar.Realize()
-		self.SetToolBar(self.toolBar)
+		self.tool_bar.Realize()
+		self.SetToolBar(self.tool_bar)
 
 		self.grid = grid.Grid(self)
 		self.grid.CreateGrid(20, 20)
@@ -45,25 +45,25 @@ class Interface(wx.Frame):
 		self.Show(True)
 		self.app.MainLoop()
 
-	def onFileNew(self, event):
+	def on_file_new(self, event):
 		pass
 
-	def onFileOpen(self, event):
+	def on_file_open(self, event):
 		pass
 
-	def onFileRevert(self, event):
+	def on_file_revert(self, event):
 		pass
 
-	def onFileSave(self, event):
+	def on_file_save(self, event):
 		pass
 
-	def onFileSaveAs(self, event):
+	def on_file_saveas(self, event):
 		pass
 
-	def onExit(self, event):
+	def on_exit(self, event):
 		pass
 
-	def onToolView(self, event):
+	def on_tool_view(self, event):
 		pass
 
 
