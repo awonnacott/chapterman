@@ -7,12 +7,13 @@ from os.path import join as path_join
 
 # Select database library
 # Must provide
-    #save(filename, db)
-    #load(filename) -> db
-    #same(filename, db) -> bool
+#save(filename, db)
+#load(filename) -> db
+#same(filename, db) -> bool
 import db_pickle as db
 #import db_text as db
 #import db_sql as db
+
 
 def empty_db():
     db = {}
@@ -25,6 +26,7 @@ def empty_db():
     db['mf'] = [[]] # members' forms
     return db
 
+
 class Interface(wx.Frame):
     def __init__(self):
         self.filename = ""
@@ -35,10 +37,10 @@ class Interface(wx.Frame):
         self.mode = 'e'
         self.app = wx.App(False)
         wx.Frame.__init__(self, None, title="ChapterMan Title", size=(640, 480), name="ChapterMan Name")
-        
-        self.icon = wx.Icon("icon.png")
+
+        self.icon = wx.Icon("icon.png", wx.BITMAP_TYPE_ANY)
         self.SetIcon(self.icon)
-        
+
         self.status_bar = wx.StatusBar(self)
         self.SetStatusBar(self.status_bar)
 
@@ -77,7 +79,7 @@ class Interface(wx.Frame):
         return path_join(self.dirname, self.filename)
 
     def on_file_save_maybe(self, event):
-    	print("fm")
+        print("fm")
         if db.same(self.get_filename(), self.db):
             result = wx.ID_OK
         else:
@@ -89,19 +91,19 @@ class Interface(wx.Frame):
         return result
 
     def update(self):
-    	print "u*"
+        print "u*"
         rows = len(self.db['m'])
         cols = len(self.db[self.mode])
         self.grid.Destroy()
         self.grid = grid.Grid(self)
         self.grid.CreateGrid(rows, cols)
         for i in range(rows):
-        	self.grid.SetRowLabelValue(i, self.db['m'][i])
+            self.grid.SetRowLabelValue(i, self.db['m'][i])
         for i in range(cols):
-        	self.grid.SetColLabelValue(i, self.db[self.mode][i])
+            self.grid.SetColLabelValue(i, self.db[self.mode][i])
 
     def on_file_new(self, event):
-    	print "fn"
+        print "fn"
         result = self.on_file_save_maybe(event)
         if (result == wx.ID_OK) or (result == wx.ID_NO):
             self.filename = ""
@@ -111,7 +113,7 @@ class Interface(wx.Frame):
         return result
 
     def on_file_open(self, event):
-    	print "fo"
+        print "fo"
         result = self.on_file_save_maybe(event)
         if (result == wx.ID_OK) or (result == wx.ID_NO):
             dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*", wx.OPEN)
@@ -125,7 +127,7 @@ class Interface(wx.Frame):
         return result
 
     def on_file_revert(self, event):
-    	print "fr"
+        print "fr"
         if (self.filename != "") and (self.dirname != ""):
             self.db = db.load(self.get_filename())
             self.update()
@@ -135,8 +137,8 @@ class Interface(wx.Frame):
         return result
 
     def on_file_save(self, event):
-    	print "fs"
-        if (not self.get_filename()):
+        print "fs"
+        if not self.get_filename():
             result = self.on_file_saveas(event)
         elif db.same(self.get_filename(), self.db):
             result = wx.ID_OK
@@ -146,7 +148,7 @@ class Interface(wx.Frame):
         return result
 
     def on_file_saveas(self, event):
-    	print "fa"
+        print "fa"
         dlg = wx.FileDialog(self, "Choose a file", self.dirname, self.filename, "*", wx.SAVE)
         result = dlg.ShowModal()
         if result == wx.ID_OK:
@@ -157,7 +159,7 @@ class Interface(wx.Frame):
         return result
 
     def on_exit(self, event):
-    	print "e*"
+        print "e*"
         result = self.on_file_save_maybe(event)
         if (result == wx.ID_OK) or (result == wx.ID_NO):
             self.Close(True)
