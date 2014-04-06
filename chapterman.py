@@ -59,17 +59,14 @@ class Interface(wx.Frame):
         self.menu_bar = wx.MenuBar()
         self.menu_bar.Append(self.file_menu, "&File")
         self.SetMenuBar(self.menu_bar)
-        # Add mode functions in menu
 
         self.tool_bar = self.CreateToolBar()
         self.tool_view = self.tool_bar.AddLabelTool(-1, "View", wx.Bitmap("view.png"))
         self.Bind(wx.EVT_TOOL, self.on_tool_view)
         self.tool_bar.Realize()
         self.SetToolBar(self.tool_bar)
-        # Add mode function shortcuts on toolbar
 
         self.grid = grid.Grid(self)
-        #self.grid.SetColLabelValue
 
         self.update()
 
