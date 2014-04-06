@@ -7,12 +7,12 @@ from os.path import join as path_join
 
 # Select database library
 # Must provide
-    #db_save(filename, db)
-    #db_load(filename) -> db
-    #db_same(filename, db) -> bool
-from db_pickle import *
-#from db_text import *
-#from db_sql import *
+    #save(filename, db)
+    #load(filename) -> db
+    #same(filename, db) -> bool
+import db_pickle as db
+#import db_text as db
+#import db_sql as db
 
 def empty_db():
     db = {}
@@ -78,7 +78,7 @@ class Interface(wx.Frame):
 
     def on_file_save_maybe(self, event):
     	print("fm")
-        if db_same(self.get_filename(), self.db):
+        if db.same(self.get_filename(), self.db):
             result = wx.ID_OK
         else:
             dlg = wx.MessageDialog(self, "Save file?", "Keep the changes to the file?", wx.YES_NO)
@@ -119,7 +119,7 @@ class Interface(wx.Frame):
             if result == wx.ID_OK:
                 self.filename = dlg.GetFilename()
                 self.dirname = dlg.GetDirectory()
-                self.db = db_load(self.get_filename())
+                self.db = db.load(self.get_filename())
                 self.update()
             dlg.Destroy()
         return result
@@ -127,7 +127,7 @@ class Interface(wx.Frame):
     def on_file_revert(self, event):
     	print "fr"
         if (self.filename != "") and (self.dirname != ""):
-            self.db = db_load(self.get_filename())
+            self.db = db.load(self.get_filename())
             self.update()
             result = wx.ID_OK
         else:
@@ -138,10 +138,10 @@ class Interface(wx.Frame):
     	print "fs"
         if (not self.get_filename()):
             result = self.on_file_saveas(event)
-        elif db_same(self.get_filename(), self.db):
+        elif db.same(self.get_filename(), self.db):
             result = wx.ID_OK
         else:
-            db_save(self.get_filename(), self.db)
+            db.save(self.get_filename(), self.db)
             result = wx.ID_OK
         return result
 
@@ -152,8 +152,8 @@ class Interface(wx.Frame):
         if result == wx.ID_OK:
             self.filename = dlg.GetFilename()
             self.dirname = dlg.GetDirectory()
-            db_save(self.get_filename(), self.db)
-        dlg.Destroy(x)
+            db.save(self.get_filename(), self.db)
+        dlg.Destroy()
         return result
 
     def on_exit(self, event):
