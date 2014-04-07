@@ -99,7 +99,6 @@ class Interface(wx.Frame):
             for j in range(cols):
                 self.db['m'+self.mode][i][j] = self.grid.GetCellValue(i, j)
 
-
     def update(self):
         print "u*"
         rows = len(self.db['m'])
