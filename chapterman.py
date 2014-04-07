@@ -17,13 +17,13 @@ import db_pickle as db
 
 def empty_db():
     db = {}
-    db['m']  = []   # members
-    db['e']  = []   # events
-    db['me'] = [[]] # members in events
-    db['d']  = []   # meeting dates
-    db['md'] = [[]] # attendance, members in dates
-    db['f']  = []   # forms
-    db['mf'] = [[]] # members' forms
+    db['m']  = []    # members
+    db['e']  = []    # events
+    db['me'] = [[]]  # members in events
+    db['d']  = []    # meeting dates
+    db['md'] = [[]]  # attendance, members in dates
+    db['f']  = []    # forms
+    db['mf'] = [[]]  # members' forms
     return db
 
 
@@ -32,8 +32,9 @@ class Interface(wx.Frame):
         self.filename = ""
         self.dirname = ""
         self.db = empty_db()
-        #self.db['m'] = ["Andrew", "Cynthia"]
-        #self.db['e'] = ["Tech Bowl", "Chapter Team"]
+        self.db['m'] = ["Andrew", "Cynthia"]
+        self.db['e'] = ["Tech Bowl", "Chapter Team"]
+        self.db['me'] = [["yes", "apples"], ["foobar", "cenicolia"]]
         self.mode = 'e'
         self.app = wx.App(False)
         wx.Frame.__init__(self, None, title="ChapterMan Title", size=(640, 480), name="ChapterMan Name")
@@ -90,6 +91,15 @@ class Interface(wx.Frame):
             dlg.Destroy()
         return result
 
+    def fromgrid(self):
+        print "g*"
+        rows = len(self.db['m'])
+        cols = len(self.db[self.mode])
+        for i in range(rows):
+            for j in range(cols):
+                self.db['m'+self.mode][i][j] = self.grid.GetCellValue(i, j)
+
+
     def update(self):
         print "u*"
         rows = len(self.db['m'])
@@ -101,6 +111,9 @@ class Interface(wx.Frame):
             self.grid.SetRowLabelValue(i, self.db['m'][i])
         for i in range(cols):
             self.grid.SetColLabelValue(i, self.db[self.mode][i])
+        for i in range(rows):
+            for j in range(cols):
+                self.grid.SetCellValue(i, j, self.db['m'+self.mode][i][j])
 
     def on_file_new(self, event):
         print "fn"
@@ -143,6 +156,7 @@ class Interface(wx.Frame):
         elif db.same(self.get_filename(), self.db):
             result = wx.ID_OK
         else:
+            self.fromgrid()
             db.save(self.get_filename(), self.db)
             result = wx.ID_OK
         return result
@@ -152,6 +166,7 @@ class Interface(wx.Frame):
         dlg = wx.FileDialog(self, "Choose a file", self.dirname, self.filename, "*", wx.SAVE)
         result = dlg.ShowModal()
         if result == wx.ID_OK:
+            self.fromgrid()
             self.filename = dlg.GetFilename()
             self.dirname = dlg.GetDirectory()
             db.save(self.get_filename(), self.db)
