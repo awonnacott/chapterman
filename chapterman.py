@@ -20,8 +20,8 @@ def empty_db():
     db['m']  = []    # members
     db['e']  = []    # events
     db['me'] = [[]]  # members in events
-    db['d']  = []    # meeting dates
-    db['md'] = [[]]  # attendance, members in dates
+    db['a']  = []    # meeting dates
+    db['ma'] = [[]]  # attendance, members in dates
     db['f']  = []    # forms
     db['mf'] = [[]]  # members' forms
     return db
@@ -32,12 +32,16 @@ class Interface(wx.Frame):
         self.filename = ""
         self.dirname = ""
         self.db = empty_db()
-        self.db['m'] = ["Andrew", "Cynthia"]
+        self.db['m'] = ["Andrew", "Cynthia", "Kyle"]
         self.db['e'] = ["Tech Bowl", "Chapter Team"]
-        self.db['me'] = [["yes", "apples"], ["foobar", "cenicolia"]]
+        self.db['me'] = [["yes", "apples"], ["foobar", "cenicolia"], ["peru", "mango"]]
+        self.db['a'] = ["4/4", "4/5"]
+        self.db['ma'] = [["yes", "apples"], ["foobar", "cenicolia"], ["peru", "mango"]]
+        self.db['f'] = ["States Permission", "States Meds"]
+        self.db['mf'] = [["yes", "apples"], ["foobar", "cenicolia"], ["peru", "mango"]]
         self.mode = 'e'
         self.app = wx.App(False)
-        wx.Frame.__init__(self, None, title="ChapterMan Title", size=(640, 480), name="ChapterMan Name")
+        wx.Frame.__init__(self, None, title="ChapterMan", size=(640, 480), name="ChapterMan")
 
         self.icon = wx.Icon("icon.png", wx.BITMAP_TYPE_ANY)
         self.SetIcon(self.icon)
@@ -45,7 +49,7 @@ class Interface(wx.Frame):
         self.status_bar = wx.StatusBar(self)
         self.SetStatusBar(self.status_bar)
 
-        self.file_menu = wx.Menu()
+        self.file_menu   = wx.Menu()
         self.file_new    = self.file_menu.Append(wx.ID_NEW,             "&New",            "Start a file")
         self.file_open   = self.file_menu.Append(wx.ID_OPEN,            "&Open",           "Open a file")
         self.file_revert = self.file_menu.Append(wx.ID_REVERT_TO_SAVED, "Revert to Saved", "Destroy changes since the previous save")
@@ -59,8 +63,28 @@ class Interface(wx.Frame):
         self.file_menu.Bind(wx.EVT_MENU, self.on_file_saveas, self.file_saveas)
         self.file_menu.Bind(wx.EVT_MENU, self.on_exit,        self.file_exit)
 
+        self.edit_menu = wx.Menu()
+        self.edit_m    = self.edit_menu.Append(-1, "Members",  "Edit Membership List")
+        self.edit_e    = self.edit_menu.Append(-1, "Events",   "Edit List of Events")
+        self.edit_a    = self.edit_menu.Append(-1, "Meetings", "Edit Meeting Days")
+        self.edit_f    = self.edit_menu.Append(-1, "Forms",    "Edit List of Forms")
+        self.edit_menu.Bind(wx.EVT_MENU, self.on_edit_m, self.edit_m)
+        self.edit_menu.Bind(wx.EVT_MENU, self.on_edit_e, self.edit_e)
+        self.edit_menu.Bind(wx.EVT_MENU, self.on_edit_a, self.edit_a)
+        self.edit_menu.Bind(wx.EVT_MENU, self.on_edit_f, self.edit_f)
+
+        self.view_menu = wx.Menu()
+        self.view_e    = self.view_menu.Append(-1, "Events",     "Event View")
+        self.view_a    = self.view_menu.Append(-1, "Attendance", "Meeting View")
+        self.view_f    = self.view_menu.Append(-1, "Forms",      "Form View")
+        self.view_menu.Bind(wx.EVT_MENU, self.on_view_e, self.view_e)
+        self.view_menu.Bind(wx.EVT_MENU, self.on_view_a, self.view_a)
+        self.view_menu.Bind(wx.EVT_MENU, self.on_view_f, self.view_f)
+
         self.menu_bar = wx.MenuBar()
         self.menu_bar.Append(self.file_menu, "&File")
+        self.menu_bar.Append(self.edit_menu, "&Edit")
+        self.menu_bar.Append(self.view_menu, "&View")
         self.SetMenuBar(self.menu_bar)
 
         self.tool_bar = self.CreateToolBar()
@@ -79,29 +103,14 @@ class Interface(wx.Frame):
     def get_filename(self):
         return path_join(self.dirname, self.filename)
 
-    def on_file_save_maybe(self, event):
-        print("fm")
-        if db.same(self.get_filename(), self.db):
-            result = wx.ID_OK
-        else:
-            dlg = wx.MessageDialog(self, "Save file?", "Keep the changes to the file?", wx.YES_NO)
-            result = dlg.ShowModal()
-            if result == wx.ID_YES:
-                result = self.on_file_save(event)
-            dlg.Destroy()
-        return result
-
     def fromgrid(self):
-        print "g*"
         rows = len(self.db['m'])
         cols = len(self.db[self.mode])
         for i in range(rows):
             for j in range(cols):
                 self.db['m'+self.mode][i][j] = self.grid.GetCellValue(i, j)
 
-
     def update(self):
-        print "u*"
         rows = len(self.db['m'])
         cols = len(self.db[self.mode])
         self.grid.Destroy()
@@ -114,9 +123,40 @@ class Interface(wx.Frame):
         for i in range(rows):
             for j in range(cols):
                 self.grid.SetCellValue(i, j, self.db['m'+self.mode][i][j])
+        self.grid.AutoSize()
+
+    def set_mode(self, mode):
+        self.fromgrid()
+        if mode == 'e':
+            self.mode = 'e'
+        elif mode == 'a':
+            self.mode = 'a'
+        elif mode == 'f':
+            self.mode = 'f'
+        self.update()
+
+    def delete_member(self, id):
+        self.fromgrid()
+        self.db['m'].pop(id)
+        self.db['me'].pop(id)
+        self.db['a'].pop(id)
+        self.db['ma'].pop(id)
+        self.db['f'].pop(id)
+        self.db['mf'].pop(id)
+        self.update()
+
+    def on_file_save_maybe(self, event):
+        if db.same(self.get_filename(), self.db):
+            result = wx.ID_OK
+        else:
+            dlg = wx.MessageDialog(self, "Save file?", "Keep the changes to the file?", wx.YES_NO)
+            result = dlg.ShowModal()
+            if result == wx.ID_YES:
+                result = self.on_file_save(event)
+            dlg.Destroy()
+        return result
 
     def on_file_new(self, event):
-        print "fn"
         result = self.on_file_save_maybe(event)
         if (result == wx.ID_OK) or (result == wx.ID_NO):
             self.filename = ""
@@ -126,7 +166,6 @@ class Interface(wx.Frame):
         return result
 
     def on_file_open(self, event):
-        print "fo"
         result = self.on_file_save_maybe(event)
         if (result == wx.ID_OK) or (result == wx.ID_NO):
             dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*", wx.OPEN)
@@ -140,7 +179,6 @@ class Interface(wx.Frame):
         return result
 
     def on_file_revert(self, event):
-        print "fr"
         if (self.filename != "") and (self.dirname != ""):
             self.db = db.load(self.get_filename())
             self.update()
@@ -150,7 +188,6 @@ class Interface(wx.Frame):
         return result
 
     def on_file_save(self, event):
-        print "fs"
         if not self.get_filename():
             result = self.on_file_saveas(event)
         elif db.same(self.get_filename(), self.db):
@@ -162,7 +199,6 @@ class Interface(wx.Frame):
         return result
 
     def on_file_saveas(self, event):
-        print "fa"
         dlg = wx.FileDialog(self, "Choose a file", self.dirname, self.filename, "*", wx.SAVE)
         result = dlg.ShowModal()
         if result == wx.ID_OK:
@@ -173,8 +209,84 @@ class Interface(wx.Frame):
         dlg.Destroy()
         return result
 
+    def on_edit_m(self, event):
+        edit_m_frame = wx.Frame(self, -1, title="Member List", size=(640, 480), name="Member List")
+
+        edit_m_sizer = wx.BoxSizer(wx.VERTICAL)
+        edit_m_sizers = len(self.db['m'])*[None]
+        edit_m_texts = len(self.db['m'])*[None]
+        edit_m_buttons = len(self.db['m'])*[None]
+        member_id = 0
+
+        def button(id, frame):
+            def on_button(event):
+                #print id, edit_m_sizers
+                ##edit_m_sizer.Remove(edit_m_sizers[id])
+                frame.Destroy()
+                self.delete_member(id)
+
+                edit_m_frame = wx.Frame(self, -1, title="Member List", size=(640, 480), name="Member List")
+
+                edit_m_sizer = wx.BoxSizer(wx.VERTICAL)
+                edit_m_sizers = len(self.db['m'])*[None]
+                edit_m_texts = len(self.db['m'])*[None]
+                edit_m_buttons = len(self.db['m'])*[None]
+                member_id = 0
+
+                for member in self.db['m']:
+                    edit_m_sizers[member_id] = wx.BoxSizer(wx.HORIZONTAL)
+                    edit_m_texts[member_id] = wx.StaticText(edit_m_frame, -1, member)
+                    edit_m_sizers[member_id].Add(edit_m_texts[member_id])
+                    edit_m_buttons[member_id] = wx.Button(edit_m_frame, member_id, "-")
+                    edit_m_sizers[member_id].Add(edit_m_buttons[member_id])
+                    edit_m_buttons[member_id].Bind(wx.EVT_BUTTON, button(member_id, edit_m_frame))
+                    edit_m_sizer.Add(edit_m_sizers[member_id], 1, wx.EXPAND)
+                    member_id += 1
+
+                edit_m_display = wx.TextCtrl(edit_m_frame, -1, '',  style=wx.TE_RIGHT)
+                edit_m_sizer.Add(edit_m_display, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 4)
+
+                edit_m_frame.SetSizer(edit_m_sizer)
+
+                edit_m_frame.Show()
+            return on_button
+
+        for member in self.db['m']:
+            edit_m_sizers[member_id] = wx.BoxSizer(wx.HORIZONTAL)
+            edit_m_texts[member_id] = wx.StaticText(edit_m_frame, -1, member)
+            edit_m_sizers[member_id].Add(edit_m_texts[member_id], 5)
+            edit_m_buttons[member_id] = wx.Button(edit_m_frame, member_id, "-")
+            edit_m_sizers[member_id].Add(edit_m_buttons[member_id])
+            edit_m_buttons[member_id].Bind(wx.EVT_BUTTON, button(member_id, edit_m_frame))
+            edit_m_sizer.Add(edit_m_sizers[member_id], 1)
+            member_id += 1
+
+        edit_m_display = wx.TextCtrl(edit_m_frame, -1, '',  style=wx.TE_RIGHT)
+        edit_m_sizer.Add(edit_m_display, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 4)
+
+        edit_m_frame.SetSizer(edit_m_sizer)
+
+        edit_m_frame.Show()
+
+    def on_edit_e(self, event):
+        self.set_mode("e")
+
+    def on_edit_a(self, event):
+        self.set_mode("a")
+
+    def on_edit_f(self, event):
+        self.set_mode("f")
+
+    def on_view_e(self, event):
+        self.set_mode("e")
+
+    def on_view_a(self, event):
+        self.set_mode("a")
+
+    def on_view_f(self, event):
+        self.set_mode("f")
+
     def on_exit(self, event):
-        print "e*"
         result = self.on_file_save_maybe(event)
         if (result == wx.ID_OK) or (result == wx.ID_NO):
             self.Close(True)
