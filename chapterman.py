@@ -193,6 +193,36 @@ class Interface(wx.Frame):
             member_e.pop(event_id)
         self.update()
 
+    def add_date(self, new_date):
+        self.fromgrid()
+        self.db['a'].append(new_date)
+        for member_a in self.db['ma']:
+            member_a.append("")
+        self.update()
+
+    def delete_date(self, date):
+        self.fromgrid()
+        date_id = self.db['a'].index(date)
+        self.db['a'].pop(date_id)
+        for member_a in self.db['ma']:
+            member_a.pop(date_id)
+        self.update()
+
+    def add_form(self, new_form):
+        self.fromgrid()
+        self.db['f'].append(new_form)
+        for member_f in self.db['mf']:
+            member_f.append("")
+        self.update()
+
+    def delete_form(self, form):
+        self.fromgrid()
+        form_id = self.db['f'].index(form)
+        self.db['f'].pop(form_id)
+        for member_f in self.db['mf']:
+            member_f.pop(form_id)
+        self.update()
+
     def on_file_save_maybe(self, event):
         if db.same(self.get_filename(), self.db):
             result = wx.ID_OK
@@ -349,8 +379,6 @@ class Interface(wx.Frame):
 
         def button(event):
             def on_button(e):
-                print "removing event " + event
-                print "sizer" + str(edit_e_sizers[event])
                 edit_e_buttons[event].Unbind(wx.EVT_BUTTON)
                 edit_e_buttons[event].Destroy()
                 edit_e_texts1[event].Destroy()
@@ -403,10 +431,124 @@ class Interface(wx.Frame):
         edit_e_frame.Show()
 
     def on_edit_a(self, event):
-        self.set_mode("a")
+        edit_a_frame = wx.Frame(self, -1, title="Date List", size=(640, 480), name="Date List")
+
+        edit_a_sizer = wx.BoxSizer(wx.VERTICAL)
+        edit_a_sizers = {}
+        edit_a_buttons = {}
+        edit_a_texts1 = {}
+        
+        edit_a_top = wx.BoxSizer(wx.HORIZONTAL)
+        edit_a_top.Add(wx.StaticText(edit_a_frame, -1, "Date"), 5)
+        edit_a_sizer.Add(edit_a_top)
+
+        def button(date):
+            def on_button(event):
+                edit_a_buttons[date].Unbind(wx.EVT_BUTTON)
+                edit_a_buttons[date].Destroy()
+                edit_a_texts1[date].Destroy()
+                edit_a_sizer.Remove(edit_a_sizers[date])
+                self.delete_date(date)
+                edit_a_sizer.Layout()
+                edit_a_frame.Update()
+            return on_button
+
+        def add_date_from_text(textctrl):
+            def on_button(event):
+                new_date = textctrl.GetValue()
+                textctrl.Clear()
+                self.add_date(new_date)
+                edit_a_sizers[new_date] = wx.BoxSizer(wx.HORIZONTAL)
+                edit_a_texts1[new_date] = wx.StaticText(edit_a_frame, -1, new_date)
+                edit_a_sizers[new_date].Add(edit_a_texts1[new_date], 5)
+                edit_a_buttons[new_date] = wx.Button(edit_a_frame, -1, "-")
+                edit_a_sizers[new_date].Add(edit_a_buttons[new_date])
+                edit_a_buttons[new_date].Bind(wx.EVT_BUTTON, button(new_date))
+                edit_a_sizer.Add(edit_a_sizers[new_date], 1)
+                edit_a_sizer.Layout()
+                edit_a_frame.Update()
+            return on_button
+
+        date_id = 0
+        for date in self.db['a']:
+            edit_a_sizers[date] = wx.BoxSizer(wx.HORIZONTAL)
+            edit_a_texts1[date] = wx.StaticText(edit_a_frame, -1, date)
+            edit_a_sizers[date].Add(edit_a_texts1[date], 5)
+            edit_a_buttons[date] = wx.Button(edit_a_frame, date_id, "-")
+            edit_a_sizers[date].Add(edit_a_buttons[date])
+            edit_a_buttons[date].Bind(wx.EVT_BUTTON, button(date))
+            edit_a_sizer.Add(edit_a_sizers[date], 1)
+            date_id += 1
+
+        edit_a_bottom = wx.BoxSizer(wx.HORIZONTAL)
+        edit_a_display = wx.TextCtrl(edit_a_frame, -1, '',  style=wx.TE_RIGHT)
+        edit_a_button_bottom = wx.Button(edit_a_frame, -1, "+")
+        edit_a_button_bottom.Bind(wx.EVT_BUTTON, add_date_from_text(edit_a_display))
+        edit_a_bottom.Add(edit_a_display)
+        edit_a_bottom.Add(edit_a_button_bottom)
+        edit_a_sizer.Add(edit_a_bottom, 1)
+        edit_a_frame.SetSizer(edit_a_sizer)
+        edit_a_frame.Show()
 
     def on_edit_f(self, event):
-        self.set_mode("f")
+        edit_f_frame = wx.Frame(self, -1, title="Form List", size=(640, 480), name="Form List")
+
+        edit_f_sizer = wx.BoxSizer(wx.VERTICAL)
+        edit_f_sizers = {}
+        edit_f_buttons = {}
+        edit_f_texts1 = {}
+        
+        edit_f_top = wx.BoxSizer(wx.HORIZONTAL)
+        edit_f_top.Add(wx.StaticText(edit_f_frame, -1, "Form"), 5)
+        edit_f_sizer.Add(edit_f_top)
+
+        def button(form):
+            def on_button(event):
+                edit_f_buttons[form].Unbind(wx.EVT_BUTTON)
+                edit_f_buttons[form].Destroy()
+                edit_f_texts1[form].Destroy()
+                edit_f_sizer.Remove(edit_f_sizers[form])
+                self.delete_form(form)
+                edit_f_sizer.Layout()
+                edit_f_frame.Upform()
+            return on_button
+
+        def add_form_from_text(textctrl):
+            def on_button(event):
+                new_form = textctrl.GetValue()
+                textctrl.Clear()
+                self.add_form(new_form)
+                edit_f_sizers[new_form] = wx.BoxSizer(wx.HORIZONTAL)
+                edit_f_texts1[new_form] = wx.StaticText(edit_f_frame, -1, new_form)
+                edit_f_sizers[new_form].Add(edit_f_texts1[new_form], 5)
+                edit_f_buttons[new_form] = wx.Button(edit_f_frame, -1, "-")
+                edit_f_sizers[new_form].Add(edit_f_buttons[new_form])
+                edit_f_buttons[new_form].Bind(wx.EVT_BUTTON, button(new_form))
+                edit_f_sizer.Add(edit_f_sizers[new_form], 1)
+                edit_f_sizer.Layout()
+                edit_f_frame.Upform()
+            return on_button
+
+        form_id = 0
+        for form in self.db['a']:
+            edit_f_sizers[form] = wx.BoxSizer(wx.HORIZONTAL)
+            edit_f_texts1[form] = wx.StaticText(edit_f_frame, -1, form)
+            edit_f_sizers[form].Add(edit_f_texts1[form], 5)
+            edit_f_buttons[form] = wx.Button(edit_f_frame, form_id, "-")
+            edit_f_sizers[form].Add(edit_f_buttons[form])
+            edit_f_buttons[form].Bind(wx.EVT_BUTTON, button(form))
+            edit_f_sizer.Add(edit_f_sizers[form], 1)
+            form_id += 1
+
+        edit_f_bottom = wx.BoxSizer(wx.HORIZONTAL)
+        edit_f_display = wx.TextCtrl(edit_f_frame, -1, '',  style=wx.TE_RIGHT)
+        edit_f_button_bottom = wx.Button(edit_f_frame, -1, "+")
+        edit_f_button_bottom.Bind(wx.EVT_BUTTON, add_form_from_text(edit_f_display))
+        edit_f_bottom.Add(edit_f_display)
+        edit_f_bottom.Add(edit_f_button_bottom)
+        edit_f_sizer.Add(edit_f_bottom, 1)
+        edit_f_frame.SetSizer(edit_f_sizer)
+        edit_f_frame.Show()
 
     def on_view_e(self, event):
         self.set_mode("e")
