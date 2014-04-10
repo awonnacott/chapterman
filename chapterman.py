@@ -2,8 +2,7 @@
 
 import wx
 import wx.grid as grid
-
-from os.path import join as path_join
+import os
 
 # Select database library
 # Must provide
@@ -14,52 +13,11 @@ import db_pickle as db
 #import db_text as db
 #import db_sql as db
 
-
-def empty_db():
-    db = {}
-    #db['m']  = []    # members
-    db['m'] = ["Andrew", "Cynthia", "Kyle", "Etan", "Caleb", "Matt"]
-    #db['e']  = []    # events
-    db['e'] = ["Tech Bowl", "Comp Sys T", "Open Source", "Video Game", "Music"]
-    #db['me'] = [[]]  # members in events
-    db['me'] = [
-            ["X", "X", "X", "X", "" ], # Andrew
-            ["X", "",  "",  "X", "X"], # Cynthia
-            ["X", "",  "X", "X", "" ], # Kyle
-            ["",  "",  "X", "",  "" ], # Etan
-            ["X", "",  "X", "X", "" ], # Caleb
-            ["",  "X", "",  "",  "X"], # Matt
-            ]
-    #db['a']  = []    # meeting dates
-    db['a'] = ["4/4", "4/5"]
-    #db['ma'] = [[]]  # attendance, members in dates
-    db['ma'] = [
-            ["X", "X"], # Andrew
-            ["X", "X"], # Cynthia
-            ["",  "X"], # Kyle
-            ["",  "X"], # Etan
-            ["X", "X"], # Caleb
-            ["X", "" ], # Matt
-            ]
-    #db['f']  = []    # forms
-    db['f'] = ["States Permission", "States Meds", "Phone #"]
-    #db['mf'] = [[]]  # members' forms
-    db['mf'] = [
-            ["X", "n", "424259xxxx"], # Andrew
-            ["X", "y", "267983xxxx"], # Cynthia
-            ["X", "y", "424242xxxx"], # Kyle
-            ["X", "n", ""          ], # Etan
-            ["X", "n", "610348xxxx"], # Caleb
-            ["",   "", "610329xxxx"], # Matt
-            ]
-    return db
-
-
 class Interface(wx.Frame):
     def __init__(self):
-        self.filename = ""
-        self.dirname = ""
-        self.db = empty_db()
+        self.filename = "default.p"
+        self.dirname = os.path.dirname(os.path.realpath(__file__))
+        self.db = db.load(self.get_filename())
 
         self.mode = 'e'
         self.app = wx.App(False)
@@ -125,7 +83,8 @@ class Interface(wx.Frame):
         self.app.MainLoop()
 
     def get_filename(self):
-        return path_join(self.dirname, self.filename)
+        #return self.dirname + "/" + self.filename
+        return os.path.join(self.dirname, self.filename)
 
     def fromgrid(self):
         rows = len(self.db['m'])
@@ -170,7 +129,7 @@ class Interface(wx.Frame):
         present = len([day for day in self.db['ma'][member_id] if day != ""])
         total = len(self.db['a'])
         if total == 0: return 0
-        return present/total
+        return str(10000*present/total/100.0)+"%"
 
     def get_members(self, event):
         self.fromgrid()
@@ -259,9 +218,9 @@ class Interface(wx.Frame):
     def on_file_new(self, event):
         result = self.on_file_save_maybe(event)
         if (result == wx.ID_OK) or (result == wx.ID_NO):
-            self.filename = ""
-            self.dirname = ""
-            self.db = empty_db()
+            self.filename = "default.p"
+            self.dirname = os.path.dirname(os.path.realpath(__file__))
+            self.db = db.load(self.get_filename())
             self.update()
         return result
 
@@ -310,7 +269,7 @@ class Interface(wx.Frame):
         return result
 
     def on_edit_m(self, event):
-        edit_m_frame = wx.Frame(self, -1, title="Event List", size=(640, 480), name="Event List")
+        edit_m_frame = wx.Frame(self, -1, title="Member List", size=(640, 480), name="Member List")
 
         edit_m_sizer = wx.BoxSizer(wx.VERTICAL)
         edit_m_sizers = {}
@@ -455,7 +414,7 @@ class Interface(wx.Frame):
         edit_e_frame.Show()
 
     def on_edit_a(self, event):
-        edit_a_frame = wx.Frame(self, -1, title="Date List", size=(640, 480), name="Date List")
+        edit_a_frame = wx.Frame(self, -1, title="Meeting List", size=(640, 480), name="Meeting List")
 
         edit_a_sizer = wx.BoxSizer(wx.VERTICAL)
         edit_a_sizers = {}
@@ -486,7 +445,7 @@ class Interface(wx.Frame):
                 edit_a_texts1[new_date] = wx.StaticText(edit_a_frame, -1, new_date)
                 edit_a_sizers[new_date].Add(edit_a_texts1[new_date], 5, wx.ALIGN_CENTER)
                 edit_a_buttons[new_date] = wx.Button(edit_a_frame, -1, "-")
-                edit_a_sizers[new_date].Add(edit_a_buttons[new_date], 5, x.ALIGN_CENTER)
+                edit_a_sizers[new_date].Add(edit_a_buttons[new_date], 5, wx.ALIGN_CENTER)
                 edit_a_buttons[new_date].Bind(wx.EVT_BUTTON, button(new_date))
                 edit_a_sizer.Add(edit_a_sizers[new_date], 1)
                 edit_a_sizer.Layout()
