@@ -121,12 +121,12 @@ class Interface(wx.Frame):
     def get_events(self, member):
         self.fromgrid()
         member_id = self.db['m'].index(member)
-        return [event for event in self.db['me'][member_id] if event != ""]
+        return [event for event in self.db['me'][member_id] if event.rstrip() != ""]
 
     def get_attendance(self, member):
         self.fromgrid()
         member_id = self.db['m'].index(member)
-        present = len([day for day in self.db['ma'][member_id] if day != ""])
+        present = len([day for day in self.db['ma'][member_id] if day.rstrip() != ""])
         total = len(self.db['a'])
         if total == 0: return 0
         return str(10000*present/total/100.0)+"%" # Weird divisions to round result
@@ -134,7 +134,7 @@ class Interface(wx.Frame):
     def get_date_attendance(self, date):
         self.fromgrid()
         date_id = self.db['a'].index(date)
-        present = len([member for member in self.db['ma'] if member[date_id] != ""])
+        present = len([member for member in self.db['ma'] if member[date_id].rstrip() != ""])
         total = len(self.db['a'])
         if total == 0: return 0
         return str(10000*present/total/100.0)+"%" # Weird divisions to round result
@@ -145,7 +145,7 @@ class Interface(wx.Frame):
         member_id = 0
         members = []
         for member in self.db['m']:
-            if self.db['me'][member_id][event_id] != "":
+            if self.db['me'][member_id][event_id].rstrip() != "":
                 members.append(member)
             member_id += 1
         return members
