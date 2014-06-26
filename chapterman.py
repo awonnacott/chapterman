@@ -333,8 +333,8 @@ class Interface(wx.Frame):
                     edit_sizers[new_item].Add(edit_buttons[new_item], 5, wx.ALIGN_CENTER)
                     edit_buttons[new_item].Bind(wx.EVT_BUTTON, button(new_item))
                     edit_sizer.Add(edit_sizers[new_item], 1)
-                    edit_sizer.Fit(edit_frame)
                     edit_sizer.Layout()
+                    edit_sizer.Fit(edit_frame)
                     edit_frame.Update()
                 return on_button
 
