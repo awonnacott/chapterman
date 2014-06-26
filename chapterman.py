@@ -32,7 +32,7 @@ class Interface(wx.Frame):
         m_new_vals["Name"]       = lambda member : member
         m_get_vals["Name"]       = lambda member : member
         m_new_vals["Events"]     = lambda member : "0"
-        m_get_vals["Events"]     = lambda member : str(len(self.get_events(member)))
+        m_get_vals["Events"]     = lambda member : str(len(self.get_events(member))) + (u"\u26A0" if (len(self.get_events(member)) > 6) or (len(self.get_events(member)) < 2) else "")
         m_new_vals["Attendance"] = lambda member : "0"
         m_get_vals["Attendance"] = lambda member : self.get_attendance(member)
         member = Mode('m', "Members", "Membership List", False, ["Name", "Events", "Attendance"], m_new_vals, m_get_vals)
@@ -116,9 +116,15 @@ class Interface(wx.Frame):
         self.menu_bar.Append(self.view_menu, "&View")
         self.SetMenuBar(self.menu_bar)
 
-        self.tool_bar = self.CreateToolBar()
-        self.tool_view = self.tool_bar.AddLabelTool(-1, "View", wx.Bitmap("view.png"))
-        self.Bind(wx.EVT_TOOL, self.on_tool_view)
+        self.tool_view = {}
+        self.tool_edit = {}
+        self.tool_bar = self.CreateToolBar(wx.TB_TEXT)
+        for mode in self.mdb:
+            if mode.col:
+                self.tool_view[mode.cid] = self.tool_bar.AddLabelTool(-1, mode.name, wx.Bitmap("view.png"), shortHelp="View "+mode.name, longHelp="View "+mode.title)
+                self.tool_bar.Bind(wx.EVT_TOOL, self.on_view(mode), self.tool_view[mode.cid])
+            self.tool_edit[mode.cid] = self.tool_bar.AddLabelTool(-1, mode.name, wx.Bitmap("edit.png"), shortHelp="Edit "+mode.name, longHelp="Edit "+mode.title)
+            self.tool_bar.Bind(wx.EVT_TOOL, self.on_edit(mode), self.tool_edit[mode.cid])
         self.tool_bar.Realize()
         self.SetToolBar(self.tool_bar)
 
@@ -155,12 +161,10 @@ class Interface(wx.Frame):
         for i in range(rows):
             for j in range(cols):
                 self.grid.SetCellValue(i, j, self.db['m'+self.mode][i][j])
+                if ((i/3)%2 == 1):
+                    self.grid.SetCellBackgroundColour(i,j,(172,225,175))
         self.grid.AutoSize()
-
-    def set_mode(self, mode):
-        self.fromgrid()
-        self.mode = mode.cid
-        self.update()
+        wx.PostEvent(self, wx.SizeEvent()) # Makes the scroll bars stay around after update is called and before the window is resized
 
     def get_events(self, member):
         self.fromgrid()
@@ -172,7 +176,7 @@ class Interface(wx.Frame):
         member_id = self.db['m'].index(member)
         present = len([day for day in self.db['ma'][member_id] if day != ""])
         total = len(self.db['a'])
-        if total == 0: return 0
+        if total == 0: return "0.0%"
         return str(10000*present/total/100.0)+"%" # Weird divisions to round result
 
     def get_date_attendance(self, date):
@@ -295,25 +299,23 @@ class Interface(wx.Frame):
             edit_frame = wx.Frame(self, -1, title=mode.title, size=(480, 480))
             edit_frame.SetIcon(wx.Icon("edit.png", wx.BITMAP_TYPE_ANY))
 
-            edit_sizer   = wx.BoxSizer(wx.VERTICAL)
-            edit_sizers  = {}
+            edit_sizer   = wx.FlexGridSizer(len(self.db[mode.cid])+2,len(mode.cols)+1, 5, 5)
             edit_buttons = {}
-            edit_texts   = {} # Switch to rows
+            edit_texts   = {}
             for col in mode.cols:
                 edit_texts[col] = {}
             
-            edit_top = wx.BoxSizer(wx.HORIZONTAL)
             for col in mode.cols:
-                edit_top.Add(wx.StaticText(edit_frame, -1, col), 5)
-            edit_sizer.Add(edit_top)
+                edit_sizer.Add(wx.StaticText(edit_frame, -1, col), 5, wx.ALIGN_CENTER)
+            edit_sizer.Add(wx.StaticText(edit_frame, -1, ""), 5)
 
             def button(item):
                 def on_button(event):
                     edit_buttons[item].Unbind(wx.EVT_BUTTON)
                     edit_buttons[item].Destroy()
                     for col in mode.cols:
+                        edit_sizer.Remove(edit_texts[col][item])
                         edit_texts[col][item].Destroy()
-                    edit_sizer.Remove(edit_sizers[item])
                     self.delete_item(item, mode.cid)
                     edit_sizer.Layout()
                     edit_sizer.Fit(edit_frame)
@@ -322,17 +324,16 @@ class Interface(wx.Frame):
 
             def add_item_from_text(textctrl):
                 def on_button(event):
+                    edit_sizer.SetRows(edit_sizer.GetRows()+1)
                     new_item = textctrl.GetValue()
                     textctrl.Clear()
                     self.add_item(new_item, mode.cid)
-                    edit_sizers[new_item] = wx.BoxSizer(wx.HORIZONTAL)
                     for col in mode.cols:
                         edit_texts[col][new_item] = wx.StaticText(edit_frame, -1, mode.new_vals[col](new_item))
-                        edit_sizers[new_item].Add(edit_texts[col][new_item], 5, wx.ALIGN_CENTER)
-                    edit_buttons[new_item] = wx.Button(edit_frame, -1, "-")
-                    edit_sizers[new_item].Add(edit_buttons[new_item], 5, wx.ALIGN_CENTER)
+                        edit_sizer.Add(edit_texts[col][new_item], 5, wx.ALIGN_CENTER)
+                    edit_buttons[new_item] = wx.Button(edit_frame, -1, "Delete " + mode.name[:-1])
+                    edit_sizer.Add(edit_buttons[new_item], 5, wx.ALIGN_CENTER)
                     edit_buttons[new_item].Bind(wx.EVT_BUTTON, button(new_item))
-                    edit_sizer.Add(edit_sizers[new_item], 1)
                     edit_sizer.Layout()
                     edit_sizer.Fit(edit_frame)
                     edit_frame.Update()
@@ -340,23 +341,21 @@ class Interface(wx.Frame):
 
             item_id = 0
             for item in self.db[mode.cid]:
-                edit_sizers[item] = wx.BoxSizer(wx.HORIZONTAL)
                 for col in mode.cols:
                     edit_texts[col][item] = wx.StaticText(edit_frame, -1, mode.get_vals[col](item))
-                    edit_sizers[item].Add(edit_texts[col][item], 5, wx.ALIGN_CENTER)
-                edit_buttons[item] = wx.Button(edit_frame, item_id, "-")
-                edit_sizers[item].Add(edit_buttons[item], 5, wx.ALIGN_CENTER)
+                    edit_sizer.Add(edit_texts[col][item], 5, wx.ALIGN_CENTER)
+                edit_buttons[item] = wx.Button(edit_frame, item_id, "Delete " + mode.name[:-1])
+                edit_sizer.Add(edit_buttons[item], 5, wx.ALIGN_CENTER)
                 edit_buttons[item].Bind(wx.EVT_BUTTON, button(item))
-                edit_sizer.Add(edit_sizers[item], 1)
                 item_id += 1
 
-            edit_bottom = wx.BoxSizer(wx.HORIZONTAL)
             edit_display = wx.TextCtrl(edit_frame, -1, '',  style=wx.TE_RIGHT)
-            edit_button_bottom = wx.Button(edit_frame, -1, "+")
+            edit_button_bottom = wx.Button(edit_frame, -1, "Add " + mode.name[:-1])
             edit_button_bottom.Bind(wx.EVT_BUTTON, add_item_from_text(edit_display))
-            edit_bottom.Add(edit_display, 0, wx.ALIGN_CENTER)
-            edit_bottom.Add(edit_button_bottom, 0, wx.ALIGN_CENTER)
-            edit_sizer.Add(edit_bottom, 1)
+            edit_sizer.Add(edit_display, 0, wx.ALIGN_CENTER)
+            for i in range(len(mode.cols)-1):
+                edit_sizer.Add(wx.StaticText(edit_frame, -1, ""), 5)
+            edit_sizer.Add(edit_button_bottom, 0, wx.ALIGN_CENTER)
             edit_frame.SetSizer(edit_sizer)
             edit_sizer.Fit(edit_frame)
             edit_frame.SetBackgroundColour(wx.WHITE)
@@ -365,7 +364,9 @@ class Interface(wx.Frame):
 
     def on_view(self, mode):
         def view(event):
-            self.set_mode(mode)
+            self.fromgrid()
+            self.mode = mode.cid
+            self.update()
         return view
 
     def on_exit(self, event):
@@ -373,10 +374,6 @@ class Interface(wx.Frame):
         if (result == wx.ID_OK) or (result == wx.ID_NO):
             self.Close(True)
         return result
-
-    def on_tool_view(self, event):
-        pass
-
 
 if __name__ == "__main__":
     Interface()
