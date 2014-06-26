@@ -24,13 +24,9 @@ class Mode:
         self.get_vals = get_vals
 
 class Interface(wx.Frame):
-    def __init__(self):
-        self.filename = "default.p"
-        self.dirname = os.path.dirname(os.path.realpath(__file__))
-        self.db = db.load(self.get_filename())
-        self.mdb = []
-
+    def makeMDB(self):
         # Create mode object for member type
+        mdb = []
         m_new_vals = {}
         m_get_vals = {}
         m_new_vals["Name"]       = lambda member : member
@@ -40,7 +36,7 @@ class Interface(wx.Frame):
         m_new_vals["Attendance"] = lambda member : "0"
         m_get_vals["Attendance"] = lambda member : self.get_attendance(member)
         member = Mode('m', "Members", "Membership List", False, ["Name", "Events", "Attendance"], m_new_vals, m_get_vals)
-        self.mdb.append(member)
+        mdb.append(member)
 
         # Create mode object for event type
         e_new_vals = {}
@@ -50,7 +46,7 @@ class Interface(wx.Frame):
         e_new_vals["Members"]    = lambda event : "0"
         e_get_vals["Members"]    = lambda event : str(len(self.get_members(event)))
         event = Mode('e', "Events", "Event List", True, ["Name", "Members"], e_new_vals, e_get_vals)
-        self.mdb.append(event)
+        mdb.append(event)
 
         # Create mode object for meeting type
         a_new_vals = {}
@@ -60,7 +56,7 @@ class Interface(wx.Frame):
         a_new_vals["Attendance"] = lambda date : "0"
         a_get_vals["Attendance"] = lambda date : self.get_date_attendance(date)
         meeting = Mode('a', "Meetings", "Meeting List", True, ["Date", "Attendance"], a_new_vals, a_get_vals)
-        self.mdb.append(meeting)
+        mdb.append(meeting)
 
         # Create mode object for form type
         f_new_vals = {}
@@ -68,8 +64,15 @@ class Interface(wx.Frame):
         f_new_vals["Form"]       = lambda form : form
         f_get_vals["Form"]       = lambda form : form
         form = Mode('f', "Forms", "Form List", True, ["Form"], f_new_vals, f_get_vals)
-        self.mdb.append(form)
+        mdb.append(form)
+        return mdb
 
+    def __init__(self):
+        self.filename = "default.p"
+        self.dirname = os.path.dirname(os.path.realpath(__file__))
+        self.db = db.load(self.get_filename())
+        self.mdb = self.makeMDB()
+       
         self.mode = 'e'
         self.app = wx.App(False)
         wx.Frame.__init__(self, None, title="ChapterMan", size=(640, 480), name="ChapterMan")
@@ -176,7 +179,7 @@ class Interface(wx.Frame):
         self.fromgrid()
         date_id = self.db['a'].index(date)
         present = len([member for member in self.db['ma'] if member[date_id] != ""])
-        total = len(self.db['a'])
+        total = len(self.db['m'])
         if total == 0: return 0
         return str(10000*present/total/100.0)+"%" # Weird divisions to round result
 
@@ -289,13 +292,13 @@ class Interface(wx.Frame):
 
     def on_edit(self, mode):
         def edit(event):
-            edit_frame = wx.Frame(self, -1, title=mode.title, size=(640, 480))
+            edit_frame = wx.Frame(self, -1, title=mode.title, size=(480, 480))
             edit_frame.SetIcon(wx.Icon("edit.png", wx.BITMAP_TYPE_ANY))
 
             edit_sizer   = wx.BoxSizer(wx.VERTICAL)
             edit_sizers  = {}
             edit_buttons = {}
-            edit_texts   = {}
+            edit_texts   = {} # Switch to rows
             for col in mode.cols:
                 edit_texts[col] = {}
             
@@ -313,6 +316,7 @@ class Interface(wx.Frame):
                     edit_sizer.Remove(edit_sizers[item])
                     self.delete_item(item, mode.cid)
                     edit_sizer.Layout()
+                    edit_sizer.Fit(edit_frame)
                     edit_frame.Update()
                 return on_button
 
@@ -329,6 +333,7 @@ class Interface(wx.Frame):
                     edit_sizers[new_item].Add(edit_buttons[new_item], 5, wx.ALIGN_CENTER)
                     edit_buttons[new_item].Bind(wx.EVT_BUTTON, button(new_item))
                     edit_sizer.Add(edit_sizers[new_item], 1)
+                    edit_sizer.Fit(edit_frame)
                     edit_sizer.Layout()
                     edit_frame.Update()
                 return on_button
@@ -353,6 +358,7 @@ class Interface(wx.Frame):
             edit_bottom.Add(edit_button_bottom, 0, wx.ALIGN_CENTER)
             edit_sizer.Add(edit_bottom, 1)
             edit_frame.SetSizer(edit_sizer)
+            edit_sizer.Fit(edit_frame)
             edit_frame.SetBackgroundColour(wx.WHITE)
             edit_frame.Show()
         return edit
