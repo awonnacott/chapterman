@@ -13,18 +13,18 @@ import db_pickle as db
 #import db_text as db
 #import db_sql as db
 
-class Mode:
+class Mode: #These objects store the information of a display mode
     def __init__(self, cid, name, title, col, cols, new_vals, get_vals):
         self.cid      = cid
         self.name     = name
         self.title    = title
-        self.col      = col
-        self.cols     = cols
-        self.new_vals = new_vals
-        self.get_vals = get_vals
+        self.col      = col # Is this a column mode (like Events) or a row mode (like Members)
+        self.cols     = cols # What columns should be displayed on the Edit screen
+        self.new_vals = new_vals # Default values for the Edit screen columns
+        self.get_vals = get_vals # Functions to generate a value for the Edit screen columns
 
 class Interface(wx.Frame):
-    def makeMDB(self):
+    def makeMDB(self): # Set up all the mode objects for chapter management - add or remove new modes here
         # Create mode object for member type
         mdb = []
         m_new_vals = {}
@@ -74,6 +74,8 @@ class Interface(wx.Frame):
         self.mdb = self.makeMDB()
        
         self.mode = 'e'
+
+        # Start graphics code
         self.app = wx.App(False)
         wx.Frame.__init__(self, None, title="ChapterMan", size=(640, 480), name="ChapterMan")
 
@@ -83,6 +85,7 @@ class Interface(wx.Frame):
         self.status_bar = wx.StatusBar(self)
         self.SetStatusBar(self.status_bar)
 
+        # Menu code
         self.file_menu   = wx.Menu()
         self.file_new    = self.file_menu.Append(wx.ID_NEW,             "&New",            "Start a file")
         self.file_open   = self.file_menu.Append(wx.ID_OPEN,            "&Open",           "Open a file")
@@ -116,6 +119,7 @@ class Interface(wx.Frame):
         self.menu_bar.Append(self.view_menu, "&View")
         self.SetMenuBar(self.menu_bar)
 
+        # Toolbar code
         self.tool_view = {}
         self.tool_edit = {}
         self.tool_bar = self.CreateToolBar(wx.TB_TEXT)
@@ -128,19 +132,22 @@ class Interface(wx.Frame):
         self.tool_bar.Realize()
         self.SetToolBar(self.tool_bar)
 
+        # Create initial grid
         self.grid = grid.Grid(self)
 
+        # Populate grid
         self.update()
 
         self.SetBackgroundColour(wx.WHITE)
 
         self.Show(True)
-        self.app.MainLoop()
+        self.app.MainLoop() # Starts the event loop
 
     def get_filename(self):
         #return self.dirname + "/" + self.filename
         return os.path.join(self.dirname, self.filename)
 
+    # Grid management
     def fromgrid(self):
         rows = len(self.db['m'])
         cols = len(self.db[self.mode])
@@ -166,6 +173,7 @@ class Interface(wx.Frame):
         self.grid.AutoSize()
         wx.PostEvent(self, wx.SizeEvent()) # Makes the scroll bars stay around after update is called and before the window is resized
 
+    # Utility functions
     def get_events(self, member):
         self.fromgrid()
         member_id = self.db['m'].index(member)
@@ -230,6 +238,7 @@ class Interface(wx.Frame):
                 member.pop(item_id)
             self.update()
 
+    # File interaction functions and callbacks
     def on_file_save_maybe(self, event):
         if db.same(self.get_filename(), self.db):
             result = wx.ID_OK
@@ -294,8 +303,9 @@ class Interface(wx.Frame):
         dlg.Destroy()
         return result
 
+    # Callback generator for edit buttons
     def on_edit(self, mode):
-        def edit(event):
+        def edit(event): # Returns a callback function
             edit_frame = wx.Frame(self, -1, title=mode.title, size=(480, 480))
             edit_frame.SetIcon(wx.Icon("edit.png", wx.BITMAP_TYPE_ANY))
 
@@ -309,6 +319,7 @@ class Interface(wx.Frame):
                 edit_sizer.Add(wx.StaticText(edit_frame, -1, col), 5, wx.ALIGN_CENTER)
             edit_sizer.Add(wx.StaticText(edit_frame, -1, ""), 5)
 
+            # Buttons to remove and add an item - again uses callback generators
             def button(item):
                 def on_button(event):
                     edit_buttons[item].Unbind(wx.EVT_BUTTON)
@@ -339,6 +350,7 @@ class Interface(wx.Frame):
                     edit_frame.Update()
                 return on_button
 
+            # Fill inital grid sizer
             item_id = 0
             for item in self.db[mode.cid]:
                 for col in mode.cols:
@@ -349,6 +361,7 @@ class Interface(wx.Frame):
                 edit_buttons[item].Bind(wx.EVT_BUTTON, button(item))
                 item_id += 1
 
+            # Set up actual event window display
             edit_display = wx.TextCtrl(edit_frame, -1, '',  style=wx.TE_RIGHT)
             edit_button_bottom = wx.Button(edit_frame, -1, "Add " + mode.name[:-1])
             edit_button_bottom.Bind(wx.EVT_BUTTON, add_item_from_text(edit_display))
@@ -362,6 +375,7 @@ class Interface(wx.Frame):
             edit_frame.Show()
         return edit
 
+    # Return a callback function to change the view to a given mode
     def on_view(self, mode):
         def view(event):
             self.fromgrid()
